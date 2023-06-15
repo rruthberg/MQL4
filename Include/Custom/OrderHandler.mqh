@@ -26,13 +26,14 @@ class OrderHandler
       static int _slippage;
       static OrderCounter _counter;
       static bool _uniDirectional;
-      
-      int openMarketOrder(string pSymbol, int pType, double pVolume, string pComment, color pArrow);
-      bool closeMarketOrders(CLOSE_MARKET_TYPE pCloseType);
 
       double getOrderPrice(int pType, string pSymbol, bool isClose = false);
       bool isNoActiveOrdersForType(int pType);
       bool selectOrder(int pTicket);
+      
+      int openMarketOrder(string pSymbol, int pType, double pVolume, string pComment, color pArrow);
+      bool closeMarketOrders(CLOSE_MARKET_TYPE pCloseType);
+
 
       
 
