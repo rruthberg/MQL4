@@ -12,28 +12,25 @@
 //| Includes and object initialization                               |
 //+------------------------------------------------------------------+
 
-#include <Custom/OrderHandler.mqh>>
-#include <Custom/OrderHandler.mqh>>
+#include <Custom/OrderHandler.mqh>
 #include <Custom/HelperFunctions.mqh>
-OrderHandler trade;
-OrderCounter count;
 
 
 //+------------------------------------------------------------------+
 //| Input variables                                                  |
 //+------------------------------------------------------------------+
 
-sinput string TradeSettings;    	// Trade Settings
 input int MagicNumber = 101;
 input int Slippage = 10;
-input double FixedLotSize = 0.1;
-
+input double LotSize = 0.1;
+input int StopLoss = 0;
+input int TakeProfit = 0;
 
 //+------------------------------------------------------------------+
 //| Global variable and indicators                                   |
 //+------------------------------------------------------------------+
 
-int gBuyTicket, gSellTicket;
+OrderHandler trade = OrderHandler();
 
 
 //+------------------------------------------------------------------+
@@ -42,10 +39,8 @@ int gBuyTicket, gSellTicket;
 
 int OnInit()
 {
-   // Set magic number
    trade.setMagicNumber(MagicNumber);
    trade.setSlippage(Slippage);
-   
    return(INIT_SUCCEEDED);
 }
 
@@ -56,25 +51,16 @@ int OnInit()
 
 void OnTick()
 {
-   // Trading
-   if(tradeEnabled == true)
+   // LONG
+   if(  )
    {
-	   bool tradeEnabled = true;
-      double lotSize = FixedLotSize;
-      
-      // Open buy order
-      if(  )
-      {
-         gBuyTicket = trade.openBuyOrder(_Symbol,lotSize);
-         trade.setOrderStopAndProfit(gBuyTicket,StopLoss,TakeProfit);
-      }
-      
-      // Open sell order
-      else if(  )
-      {
-         gSellTicket = trade.openSellOrder(_Symbol,lotSize);
-         trade.setOrderStopAndProfit(gSellTicket,StopLoss,TakeProfit);
-      }
-   }   
+      trade.goLong(_Symbol,LotSize, StopLoss, TakeProfit);
+    }
+     
+   // SHORT
+   else if(  )
+   {
+      trade.goShort(_Symbol,LotSize, StopLoss, TakeProfit);
+   } 
  
 }
