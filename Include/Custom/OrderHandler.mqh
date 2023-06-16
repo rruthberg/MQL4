@@ -26,6 +26,8 @@ class OrderHandler
       static int _slippage;
       static OrderCounter _counter;
       static bool _uniDirectional;
+      static bool _singleOrderPerDirection;
+      static ticket_tracker _tickets;
 
       double getOrderPrice(int pType, string pSymbol, bool isClose = false);
       bool isNoActiveOrdersForType(int pType);
@@ -53,15 +55,21 @@ class OrderHandler
 
       static void setMagicNumber(int pMagic);
       static int getMagicNumber();
+
+      void goLong(string pSymbol, double pLotSize, int pStopLoss = 0, int pTakeProfit = 0);
+      void goShort(string pSymbol, double pLotSize, int pStopLoss = 0, int pTakeProfit = 0); 
       
-      static void setSlippage(int pSlippage);     
+      static void setSlippage(int pSlippage);    
+
 
 };
 
 int OrderHandler::_magicNumber = 0;
 int OrderHandler::_slippage = 10;
 bool OrderHandler::_uniDirectional = true;
+bool OrderHandler::_singleOrderPerDirection = true;
 OrderCounter OrderHandler::_counter = OrderCounter();
+ticket_tracker OrderHandler::_tickets = {0,0};
 
 
 //+------------------------------------------------------------------+
@@ -152,6 +160,27 @@ int OrderHandler::openSellOrder(string pSymbol,double pVolume,string pComment="S
 
    int ticket = openMarketOrder(pSymbol, OP_SELL, pVolume, pComment, pArrow);
    return(ticket);
+}
+
+void OrderHandler::goLong( string pSymbol, double pLotSize, int pStopLoss = 0, int pTakeProfit = 0 ){
+   if( (_singleOrderPerDirection && _tickets.buy == 0) || !_singleOrderPerDirection)
+   {
+      
+      _tickets.buy = openBuyOrder(pSymbol,pLotSize);
+      _tickets.sell = 0;
+      if(pStopLoss != 0 || pTakeProfit != 0)
+         setOrderStopAndProfit(_tickets.buy,pStopLoss,pTakeProfit);
+   }
+}
+
+void OrderHandler::goShort( string pSymbol, double pLotSize, int pStopLoss = 0, int pTakeProfit = 0 ){
+   if( (_singleOrderPerDirection && _tickets.sell == 0) || !_singleOrderPerDirection)
+   {
+      _tickets.buy = 0;
+      _tickets.sell = openSellOrder(pSymbol,pLotSize);
+      if(pStopLoss != 0 || pTakeProfit != 0)
+         setOrderStopAndProfit(_tickets.sell,pStopLoss,pTakeProfit);
+   }
 }
 
 

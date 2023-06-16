@@ -209,3 +209,10 @@ enum CLOSE_MARKET_TYPE
     CLOSE_SELL,
     CLOSE_ALL_MARKET
 };
+
+
+struct ticket_tracker 
+{
+	int buy;
+	int sell;
+};

@@ -28,9 +28,6 @@ input ENUM_APPLIED_PRICE MaPrice = PRICE_CLOSE;
 
 OrderHandler trade = OrderHandler();
 
-// Global variables
-int gBuyTicket, gSellTicket;
-
 
 // OnInit() event handler
 int OnInit()
@@ -53,28 +50,16 @@ void OnTick()
    
    
    // Buy order condition
-   if(close > ma && gBuyTicket == 0)
+   if(close > ma)
    {
-
-      // Open buy order
-      gBuyTicket = trade.openBuyOrder(_Symbol,LotSize);
-      gSellTicket = 0;
-      
-      // Add stop loss & take profit to order
-      trade.setOrderStopAndProfit(gBuyTicket,StopLoss,TakeProfit);
+      trade.goLong(_Symbol,LotSize, StopLoss, TakeProfit);
    }
    
    
    // Sell order condition
-   if(close < ma && gSellTicket == 0)
+   if(close < ma )
    {
-
-      // Open sell order
-      gSellTicket = trade.openSellOrder(_Symbol,LotSize);
-      gBuyTicket = 0;
-      
-      // Add stop loss & take profit to order
-      trade.setOrderStopAndProfit(gSellTicket,StopLoss,TakeProfit);
+      trade.goShort(_Symbol,LotSize, StopLoss, TakeProfit);
    }
    
 }
