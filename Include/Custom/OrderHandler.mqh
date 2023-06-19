@@ -43,6 +43,9 @@ class OrderHandler
    public:
       int openBuyOrder(string pSymbol, double pVolume, string pComment = "Buy order", color pArrow = clrGreen);
       int openSellOrder(string pSymbol, double pVolume, string pComment = "Sell order", color pArrow = clrRed);
+
+      void setShortStopLossAndProfit(double pStopLoss = 0, double pTakeProfit = 0, bool absolute = false);
+      void setLongStopLossAndProfit(double pStopLoss = 0, double pTakeProfit = 0, bool absolute = false);
       
       bool closeMarketOrder(int pTicket, double pVolume = 0, color pArrow = clrRed);
       bool closeAllBuyOrders();
@@ -50,16 +53,19 @@ class OrderHandler
       bool closeAllMarketOrders();
 
 	   bool modifyOrder(int pTicket, double pPrice, double pStop = 0, double pProfit = 0, datetime pExpiration = 0, color pArrow = clrOrange);
-      bool setOrderStopAndProfit(int pTicket, int pStopPoints, int pProfitPoints = 0, int pMinPoints = 10);
-	   bool setOrderSlAndTpByPrice(int pTicket, double pStopPrice, double pProfitPrice = 0, int pMinPoints = 10);
+      bool setOrderStopAndProfit(int pTicket, double pStopPoints, double pProfitPoints = 0, int pMinPoints = 10, bool absoluteLevel = false);
 
       static void setMagicNumber(int pMagic);
       static int getMagicNumber();
 
-      void goLong(string pSymbol, double pLotSize, int pStopLoss = 0, int pTakeProfit = 0);
-      void goShort(string pSymbol, double pLotSize, int pStopLoss = 0, int pTakeProfit = 0); 
+      void goLong(string pSymbol, double pLotSize, double pStopLoss = 0, double pTakeProfit = 0);
+      void goShort(string pSymbol, double pLotSize, double pStopLoss = 0, double pTakeProfit = 0); 
       
       static void setSlippage(int pSlippage);    
+
+      int positionDirection();
+      bool isLong();
+      bool isShort();
 
 
 };
@@ -162,25 +168,35 @@ int OrderHandler::openSellOrder(string pSymbol,double pVolume,string pComment="S
    return(ticket);
 }
 
-void OrderHandler::goLong( string pSymbol, double pLotSize, int pStopLoss = 0, int pTakeProfit = 0 ){
+void OrderHandler::goLong( string pSymbol, double pLotSize, double pStopLoss = 0, double pTakeProfit = 0 ){
    if( (_singleOrderPerDirection && _tickets.buy == 0) || !_singleOrderPerDirection)
    {
       
       _tickets.buy = openBuyOrder(pSymbol,pLotSize);
       _tickets.sell = 0;
-      if(pStopLoss != 0 || pTakeProfit != 0)
-         setOrderStopAndProfit(_tickets.buy,pStopLoss,pTakeProfit);
+      setLongStopLossAndProfit(pStopLoss,pTakeProfit);
    }
 }
 
-void OrderHandler::goShort( string pSymbol, double pLotSize, int pStopLoss = 0, int pTakeProfit = 0 ){
+void OrderHandler::goShort( string pSymbol, double pLotSize, double pStopLoss = 0, double pTakeProfit = 0 ){
    if( (_singleOrderPerDirection && _tickets.sell == 0) || !_singleOrderPerDirection)
    {
       _tickets.buy = 0;
       _tickets.sell = openSellOrder(pSymbol,pLotSize);
-      if(pStopLoss != 0 || pTakeProfit != 0)
-         setOrderStopAndProfit(_tickets.sell,pStopLoss,pTakeProfit);
+      setShortStopLossAndProfit(pStopLoss,pTakeProfit);
    }
+}
+
+void OrderHandler::setShortStopLossAndProfit(double pStopLoss = 0, double pTakeProfit = 0, bool absolute = false){
+   if(pStopLoss != 0 || pTakeProfit != 0)
+         setOrderStopAndProfit(_tickets.sell,pStopLoss,pTakeProfit, absolute);
+
+}
+
+void OrderHandler::setLongStopLossAndProfit(double pStopLoss = 0, double pTakeProfit = 0, bool absolute = false){
+   if(pStopLoss != 0 || pTakeProfit != 0)
+         setOrderStopAndProfit(_tickets.buy,pStopLoss,pTakeProfit, absolute);
+         
 }
 
 
@@ -370,8 +386,8 @@ bool OrderHandler::modifyOrder(int pTicket, double pPrice, double pStop = 0, dou
 }
 
 
-// Modify order stop loss and take profit by point values
-bool OrderHandler::setOrderStopAndProfit(int pTicket, int pStopPoints, int pProfitPoints = 0, int pMinPoints = 10)
+// Modify order stop loss and take profit by point values or absolue if set to true
+bool OrderHandler::setOrderStopAndProfit(int pTicket, double pStopPoints, double pProfitPoints = 0, int pMinPoints = 10, bool absoluteLevel = false)
 {
    if(pStopPoints == 0 && pProfitPoints == 0) return false;
    
@@ -392,18 +408,18 @@ bool OrderHandler::setOrderStopAndProfit(int pTicket, int pStopPoints, int pProf
    
    if(orderType == OP_BUY)
    {
-      stopLoss = BuyStopLoss(orderSymbol,pStopPoints,orderOpenPrice);
+      stopLoss = absoluteLevel ? pStopPoints : BuyStopLoss(orderSymbol,(int)pStopPoints,orderOpenPrice);
       if(stopLoss != 0) stopLoss = AdjustBelowStopLevel(orderSymbol,stopLoss,pMinPoints);
       
-      takeProfit = BuyTakeProfit(orderSymbol,pProfitPoints,orderOpenPrice);
+      takeProfit = absoluteLevel ? pProfitPoints : BuyTakeProfit(orderSymbol,(int)pProfitPoints,orderOpenPrice);
       if(takeProfit != 0) takeProfit = AdjustAboveStopLevel(orderSymbol,takeProfit,pMinPoints);
    }
    else if(orderType == OP_SELL)
    {
-      stopLoss = SellStopLoss(orderSymbol,pStopPoints,orderOpenPrice);
+      stopLoss = absoluteLevel ? pStopPoints : SellStopLoss(orderSymbol,(int)pStopPoints,orderOpenPrice);
       if(stopLoss != 0) stopLoss = AdjustAboveStopLevel(orderSymbol,stopLoss,pMinPoints);
       
-      takeProfit = SellTakeProfit(orderSymbol,pProfitPoints,orderOpenPrice);
+      takeProfit = absoluteLevel ? pProfitPoints : SellTakeProfit(orderSymbol,(int)pProfitPoints,orderOpenPrice);
       if(takeProfit != 0) takeProfit = AdjustBelowStopLevel(orderSymbol,takeProfit,pMinPoints);
    }
    
@@ -475,5 +491,23 @@ bool OrderHandler::selectOrder(int pTicket){
    return(isOrderSelected);
 }
 
+
+int OrderHandler::positionDirection(){
+   int direction = 0;
+   if(_tickets.buy > 1){
+      direction = 1;
+   } else if(_tickets.sell > 1){
+      direction = -1;
+   }
+   return(direction);
+}
+
+bool OrderHandler::isLong(){
+   return(positionDirection() > 0);
+}
+
+bool OrderHandler::isShort(){
+   return(positionDirection() < 0);
+}
 
 

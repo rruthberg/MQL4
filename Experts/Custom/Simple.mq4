@@ -10,7 +10,6 @@
 
 // Include and objects
 #include <Custom/OrderHandler.mqh>
-#include <Custom/HelperFunctions.mqh>
 
 
 
